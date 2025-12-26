@@ -1,30 +1,32 @@
-const STORAGE_KEY = 'specflow_requirements';
-const NEXT_ID_KEY = 'specflow_next_id';
+const STORAGE_KEY = "specflow_requirements";
+const NEXT_ID_KEY = "specflow_next_id";
+const VERSION_HISTORY_KEY = "specflow_version_history";
+const NEXT_VERSION_ID_KEY = "specflow_next_version_id";
 
 const defaultRequirements = [
   {
-    id: '1',
-    title: 'User Authentication',
-    description: 'Implement secure user authentication with OAuth 2.0 support',
-    status: 'Completed',
+    id: "1",
+    title: "User Authentication",
+    description: "Implement secure user authentication with OAuth 2.0 support",
+    status: "Completed",
   },
   {
-    id: '2',
-    title: 'Dashboard Analytics',
-    description: 'Create a dashboard with real-time analytics and charts',
-    status: 'in_progress',
+    id: "2",
+    title: "Dashboard Analytics",
+    description: "Create a dashboard with real-time analytics and charts",
+    status: "in_progress",
   },
   {
-    id: '3',
-    title: 'Export to PDF',
-    description: 'Allow users to export reports as PDF documents',
-    status: 'draft',
+    id: "3",
+    title: "Export to PDF",
+    description: "Allow users to export reports as PDF documents",
+    status: "draft",
   },
   {
-    id: '4',
-    title: 'Email Notifications',
-    description: 'Send automated email notifications for important events',
-    status: 'Draft',
+    id: "4",
+    title: "Email Notifications",
+    description: "Send automated email notifications for important events",
+    status: "Draft",
   },
 ];
 
@@ -46,13 +48,34 @@ const loadNextId = () => {
   if (stored) {
     return parseInt(stored, 10);
   }
-  localStorage.setItem(NEXT_ID_KEY, '5');
+  localStorage.setItem(NEXT_ID_KEY, "5");
   return 5;
 };
 
 const saveNextId = (id) => {
   localStorage.setItem(NEXT_ID_KEY, String(id));
 };
+
+const loadVersionHistory = () => {
+  const stored = localStorage.getItem(VERSION_HISTORY_KEY);
+  return stored ? JSON.parse(stored) : {};
+};
+
+const saveVersionHistory = (history) => {
+  localStorage.setItem(VERSION_HISTORY_KEY, JSON.stringify(history));
+};
+
+const loadNextVersionId = () => {
+  const stored = localStorage.getItem(NEXT_VERSION_ID_KEY);
+  return stored ? parseInt(stored, 10) : 1;
+};
+
+const saveNextVersionId = (id) => {
+  localStorage.setItem(NEXT_VERSION_ID_KEY, String(id));
+};
+
+let versionHistory = loadVersionHistory();
+let nextVersionId = loadNextVersionId();
 
 let requirements = loadRequirements();
 let nextId = loadNextId();
@@ -71,7 +94,7 @@ const simulateRequest = (callback) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (maybeReject()) {
-        reject(new Error('Network error: Request failed. Please try again.'));
+        reject(new Error("Network error: Request failed. Please try again."));
       } else {
         resolve(callback());
       }
@@ -95,15 +118,15 @@ export const getRequirementById = (id) => {
 
 export const createRequirement = (data) => {
   return simulateRequest(() => {
-    let status = data.status || 'Draft';
+    let status = data.status || "Draft";
     if (Math.random() < 0.3) {
-      status = status.toLowerCase().replace(/ /g, '_');
+      status = status.toLowerCase().replace(/ /g, "_");
     }
 
     const newRequirement = {
       id: String(nextId++),
-      title: data.title || 'Untitled Requirement',
-      description: data.description || '',
+      title: data.title || "Untitled Requirement",
+      description: data.description || "",
       status: status,
     };
     requirements.push(newRequirement);
@@ -122,7 +145,7 @@ export const updateRequirement = (id, data) => {
 
     let updatedStatus = data.status;
     if (data.status && Math.random() < 0.2) {
-      updatedStatus = data.status.toLowerCase().replace(/ /g, '_');
+      updatedStatus = data.status.toLowerCase().replace(/ /g, "_");
     }
 
     requirements[index] = {
@@ -153,7 +176,7 @@ export const generateAcceptanceCriteria = (requirementId) => {
     if (!requirement) {
       throw new Error(`Requirement with id ${requirementId} not found`);
     }
-    
+
     const criteria = [
       `Given a user is on the ${requirement.title} feature`,
       `When the user interacts with the ${requirement.title} functionality`,
@@ -164,7 +187,7 @@ export const generateAcceptanceCriteria = (requirementId) => {
       `Then the system should display a user-friendly error message`,
       `And log the error for debugging purposes`,
     ];
-    
+
     return {
       requirementId,
       criteria,
@@ -173,3 +196,63 @@ export const generateAcceptanceCriteria = (requirementId) => {
   });
 };
 
+export const getVersionHistory = (requirementId) => {
+  return simulateRequest(() => {
+    const history = versionHistory[requirementId] || [];
+    return [...history];
+  }).catch(() => []);
+};
+
+export const commitVersion = (requirementId, title, description) => {
+  return simulateRequest(() => {
+    if (!versionHistory[requirementId]) {
+      versionHistory[requirementId] = [];
+    }
+
+    const newVersion = {
+      id: String(nextVersionId++),
+      requirementId,
+      title: title.trim(),
+      description,
+      timestamp: new Date().toISOString(),
+    };
+
+    versionHistory[requirementId].push(newVersion);
+    saveVersionHistory(versionHistory);
+    saveNextVersionId(nextVersionId);
+    return newVersion;
+  });
+};
+
+export const restoreVersion = (requirementId, version) => {
+  return simulateRequest(() => {
+    const index = requirements.findIndex((r) => r.id === requirementId);
+    if (index === -1) {
+      throw new Error(`Requirement with id ${requirementId} not found`);
+    }
+
+    requirements[index] = {
+      ...requirements[index],
+      title: version.title,
+      description: version.description,
+    };
+    saveRequirements(requirements);
+    return { ...requirements[index] };
+  });
+};
+
+export const autoSaveRequirement = (id, data) => {
+  return simulateRequest(() => {
+    const index = requirements.findIndex((r) => r.id === id);
+    if (index === -1) {
+      throw new Error(`Requirement with id ${id} not found`);
+    }
+
+    requirements[index] = {
+      ...requirements[index],
+      ...data,
+    };
+    saveRequirements(requirements);
+    return { ...requirements[index] };
+  });
+};

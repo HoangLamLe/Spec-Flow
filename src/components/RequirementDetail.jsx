@@ -1,5 +1,12 @@
-import { useState, useEffect } from 'react';
-import StatusBadge from './StatusBadge';
+import { useState, useEffect } from "react";
+import StatusBadge from "./StatusBadge";
+import VersionHistoryPanel from "./VersionHistoryPanel";
+import {
+  getVersionHistory,
+  commitVersion,
+  restoreVersion,
+  autoSaveRequirement,
+} from "../services/api";
 
 function RequirementDetail({
   requirement,
@@ -11,10 +18,44 @@ function RequirementDetail({
   generating,
   acceptanceCriteria,
 }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('Draft');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("Draft");
   const [lastSaved, setLastSaved] = useState(null);
+  const [versions, setVersions] = useState([]);
+
+  // Load version history when requirement changes
+  useEffect(() => {
+    if (requirement) {
+      getVersionHistory(requirement.id)
+        .then((history) => setVersions(history))
+        .catch(() => setVersions([]));
+    }
+  }, [requirement]);
+
+  // Auto-save with debouncing - saves 3 seconds after last change
+  useEffect(() => {
+    if (!requirement) return;
+
+    // Set a timeout to auto-save 3 seconds after the last change
+    const autoSaveTimeout = setTimeout(async () => {
+      try {
+        await autoSaveRequirement(requirement.id, {
+          title: title.trim(),
+          description,
+          status,
+        });
+        setLastSaved(new Date().toISOString());
+      } catch (err) {
+        console.error("Auto-save failed:", err);
+      }
+    }, 3000);
+
+    // Clear timeout on cleanup or when dependencies change
+    return () => {
+      clearTimeout(autoSaveTimeout);
+    };
+  }, [requirement, title, description, status]);
 
   useEffect(() => {
     if (requirement) {
@@ -25,10 +66,10 @@ function RequirementDetail({
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && requirement) {
+      if (e.key === "Escape" && requirement) {
         onClose();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         if (requirement) {
           onUpdate(requirement.id, { title, description, status });
@@ -36,7 +77,7 @@ function RequirementDetail({
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
   });
 
   const handleSave = () => {
@@ -44,8 +85,36 @@ function RequirementDetail({
     setLastSaved(new Date().toISOString());
   };
 
+  const handleCommitVersion = async () => {
+    try {
+      const newVersion = await commitVersion(
+        requirement.id,
+        title,
+        description
+      );
+      setVersions((prev) => [...prev, newVersion]);
+    } catch (err) {
+      console.error("Failed to commit version:", err);
+    }
+  };
+
+  const handleRestoreVersion = async (version) => {
+    try {
+      const restored = await restoreVersion(requirement.id, version);
+      setTitle(restored.title);
+      setDescription(restored.description);
+      onUpdate(requirement.id, {
+        title: restored.title,
+        description: restored.description,
+        status,
+      });
+    } catch (err) {
+      console.error("Failed to restore version:", err);
+    }
+  };
+
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this requirement?')) {
+    if (window.confirm("Are you sure you want to delete this requirement?")) {
       onDelete(requirement.id);
     }
   };
@@ -61,13 +130,22 @@ function RequirementDetail({
   return (
     <div className="fixed right-0 top-0 h-full w-1/2 z-10 bg-white shadow-lg flex flex-col overflow-hidden">
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Requirement Details</h2>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-gray-600"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <h2 className="text-lg font-semibold text-gray-900">
+          Requirement Details
+        </h2>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -125,35 +203,54 @@ function RequirementDetail({
               disabled={generating}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {generating ? 'Generating...' : '✨ Generate AI Acceptance Criteria'}
+              {generating
+                ? "Generating..."
+                : "✨ Generate AI Acceptance Criteria"}
             </button>
           </div>
 
-          {acceptanceCriteria && acceptanceCriteria.requirementId === requirement.id && (
-            <div className="mt-4 p-4 bg-purple-50 rounded-md">
-              <h4 className="font-medium text-purple-900 mb-2">AI-Generated Acceptance Criteria</h4>
-              <ul className="space-y-2">
-                {acceptanceCriteria.criteria.map((criterion, index) => (
-                  <li key={index} className="text-sm text-purple-800 flex items-start gap-2">
-                    <span className="text-purple-500">•</span>
-                    {criterion}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs text-purple-600">
-                Generated at: {new Date(acceptanceCriteria.generatedAt).toLocaleString()}
-              </p>
-            </div>
-          )}
+          {acceptanceCriteria &&
+            acceptanceCriteria.requirementId === requirement.id && (
+              <div className="mt-4 p-4 bg-purple-50 rounded-md">
+                <h4 className="font-medium text-purple-900 mb-2">
+                  AI-Generated Acceptance Criteria
+                </h4>
+                <ul className="space-y-2">
+                  {acceptanceCriteria.criteria.map((criterion, index) => (
+                    <li
+                      key={index}
+                      className="text-sm text-purple-800 flex items-start gap-2"
+                    >
+                      <span className="text-purple-500">•</span>
+                      {criterion}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs text-purple-600">
+                  Generated at:{" "}
+                  {new Date(acceptanceCriteria.generatedAt).toLocaleString()}
+                </p>
+              </div>
+            )}
+
+          <VersionHistoryPanel
+            requirementId={requirement.id}
+            versions={versions}
+            onRestore={handleRestoreVersion}
+            onCommit={handleCommitVersion}
+          />
         </div>
       </div>
 
-      <div className="p-4 border-t border-gray-200 flex items-center justify-between" style={{ flexShrink: 0, minHeight: '80px' }}>
+      <div
+        className="p-4 border-t border-gray-200 flex items-center justify-between"
+        style={{ flexShrink: 0, minHeight: "80px" }}
+      >
         <button
           onClick={handleDelete}
           disabled={saving}
           className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
-          style={{ flex: '1' }}
+          style={{ flex: "1" }}
         >
           Delete
         </button>
@@ -161,9 +258,9 @@ function RequirementDetail({
           onClick={handleSave}
           disabled={saving}
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ flex: '1' }}
+          style={{ flex: "1" }}
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </div>
@@ -171,4 +268,3 @@ function RequirementDetail({
 }
 
 export default RequirementDetail;
-
