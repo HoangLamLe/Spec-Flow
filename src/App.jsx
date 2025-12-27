@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import RequirementList from './components/RequirementList';
-import RequirementDetail from './components/RequirementDetail';
+import { useState, useEffect } from "react";
+import RequirementList from "./components/RequirementList";
+import RequirementDetail from "./components/RequirementDetail";
 import {
   getRequirements,
   createRequirement,
   updateRequirement,
   deleteRequirement,
   generateAcceptanceCriteria,
-} from './services/api';
+} from "./services/api";
 
 function App() {
   const [requirements, setRequirements] = useState([]);
@@ -46,14 +46,14 @@ function App() {
     setSaving(true);
     try {
       const newReq = await createRequirement({
-        title: 'New Requirement',
-        description: '',
-        status: 'Draft',
+        title: "New Requirement",
+        description: "",
+        status: "Draft",
       });
       setRequirements((prev) => [...prev, newReq]);
       setSelectedRequirementId(newReq.id);
     } catch (err) {
-      console.error('Failed to create requirement:', err);
+      console.error("Failed to create requirement:", err);
     } finally {
       setSaving(false);
     }
@@ -97,6 +97,7 @@ function App() {
       setGenerating(false);
     } catch (err) {
       setError(err.message);
+      setGenerating(false);
     }
   };
 
@@ -110,8 +111,14 @@ function App() {
   );
 
   return (
-    <div className="h-screen flex bg-gray-100" style={{ position: 'relative', zIndex: 1 }}>
-      <div className="w-1/2 h-full" style={{ position: 'relative', zIndex: 100 }}>
+    <div
+      className="h-screen flex bg-gray-100"
+      style={{ position: "relative", zIndex: 1 }}
+    >
+      <div
+        className="w-1/2 h-full"
+        style={{ position: "relative", zIndex: 100 }}
+      >
         <RequirementList
           requirements={requirements}
           selectedId={selectedRequirementId}
