@@ -14,13 +14,13 @@ const defaultRequirements = [
     id: "2",
     title: "Dashboard Analytics",
     description: "Create a dashboard with real-time analytics and charts",
-    status: "in_progress",
+    status: "Completed",
   },
   {
     id: "3",
     title: "Export to PDF",
     description: "Allow users to export reports as PDF documents",
-    status: "draft",
+    status: "Draft",
   },
   {
     id: "4",
@@ -103,6 +103,13 @@ const simulateRequest = (callback) => {
 };
 
 export const getRequirements = () => {
+  // Don't call simulateRequest if we have data in localStorage
+  // This avoids unnecessary delays and random rejections
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    return Promise.resolve([...requirements]);
+  }
+  // If no data in localStorage, fetch from default and simulate the request
   return simulateRequest(() => [...requirements]).catch(() => []);
 };
 

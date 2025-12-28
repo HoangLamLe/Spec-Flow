@@ -61,7 +61,6 @@ function App() {
 
   const handleUpdate = async (id, data) => {
     setSaving(true);
-    setRequirements([...requirements]);
     try {
       const updated = await updateRequirement(id, data);
       setRequirements((prev) =>

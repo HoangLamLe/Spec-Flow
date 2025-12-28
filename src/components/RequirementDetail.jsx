@@ -37,10 +37,24 @@ function RequirementDetail({
   useEffect(() => {
     if (!requirement) return;
 
+    // Check if there are actual changes from the loaded requirement
+    const hasChanges =
+      title.trim() !== requirement.title ||
+      description !== requirement.description ||
+      status !== requirement.status;
+
+    if (!hasChanges) return;
+
     // Set a timeout to auto-save 3 seconds after the last change
     const autoSaveTimeout = setTimeout(async () => {
       try {
         await autoSaveRequirement(requirement.id, {
+          title: title.trim(),
+          description,
+          status,
+        });
+        // Sync changes back to parent component to update the list
+        onUpdate(requirement.id, {
           title: title.trim(),
           description,
           status,
@@ -55,12 +69,13 @@ function RequirementDetail({
     return () => {
       clearTimeout(autoSaveTimeout);
     };
-  }, [requirement, title, description, status]);
+  }, [requirement, title, description, status, onUpdate]);
 
   useEffect(() => {
     if (requirement) {
       setTitle(requirement.title);
       setDescription(requirement.description);
+      setStatus(requirement.status || "Draft");
     }
   }, [requirement]);
 
