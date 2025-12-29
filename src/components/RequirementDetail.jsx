@@ -140,14 +140,14 @@ function RequirementDetail({
 
   if (!requirement) {
     return (
-      <div className="fixed right-0 top-0 h-full w-1/2 z-50 bg-white shadow-lg flex items-center justify-center">
+      <div className="h-full w-full md:w-1/2 z-50 bg-white shadow-lg flex items-center justify-center">
         <p className="text-gray-500">Select a requirement to view details</p>
       </div>
     );
   }
 
   return (
-    <div className="fixed right-0 top-0 h-full w-1/2 z-10 bg-white shadow-lg flex flex-col overflow-hidden">
+    <div className="h-full w-full md:w-1/2 z-10 bg-white shadow-lg flex flex-col overflow-hidden">
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">
           Requirement Details

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 * {
-  box-sizing: content-box;
+  box-sizing: border-box;
 }
 
 /* Standardize button appearance across the app */
@@ -15,7 +15,7 @@ button {
 input,
 textarea,
 select {
-  box-sizing: content-box;
+  box-sizing: border-box;
 }
 
 div {
