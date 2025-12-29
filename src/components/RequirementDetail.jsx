@@ -23,13 +23,17 @@ function RequirementDetail({
   const [status, setStatus] = useState("Draft");
   const [lastSaved, setLastSaved] = useState(null);
   const [versions, setVersions] = useState([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
 
   // Load version history when requirement changes
   useEffect(() => {
     if (requirement) {
+      setVersionsLoading(true);
+      setVersions([]);
       getVersionHistory(requirement.id)
         .then((history) => setVersions(history))
-        .catch(() => setVersions([]));
+        .catch(() => setVersions([]))
+        .finally(() => setVersionsLoading(false));
     }
   }, [requirement]);
 
@@ -251,6 +255,7 @@ function RequirementDetail({
           <VersionHistoryPanel
             requirementId={requirement.id}
             versions={versions}
+            loading={versionsLoading}
             onRestore={handleRestoreVersion}
             onCommit={handleCommitVersion}
           />

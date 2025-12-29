@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function VersionHistoryPanel({ versions, onRestore, onCommit }) {
+function VersionHistoryPanel({ versions, onRestore, onCommit, loading }) {
   const [showCommitConfirm, setShowCommitConfirm] = useState(false);
 
   const handleCommitVersion = () => {
@@ -54,7 +54,11 @@ function VersionHistoryPanel({ versions, onRestore, onCommit }) {
         </div>
       )}
 
-      {versions.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-6">
+          <p className="text-gray-500 text-sm">Loading versions...</p>
+        </div>
+      ) : versions.length === 0 ? (
         <div className="text-center py-6">
           <p className="text-gray-500 text-sm">
             No version history yet. Click "Commit Version" to create a snapshot.
