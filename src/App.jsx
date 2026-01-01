@@ -1,113 +1,25 @@
-import { useState, useEffect } from "react";
 import RequirementList from "./components/RequirementList";
 import RequirementDetail from "./components/RequirementDetail";
-import {
-  getRequirements,
-  createRequirement,
-  updateRequirement,
-  deleteRequirement,
-  generateAcceptanceCriteria,
-} from "./services/api";
+import useRequirements from "./hooks/useRequirements";
 
 function App() {
-  const [requirements, setRequirements] = useState([]);
-  const [selectedRequirementId, setSelectedRequirementId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [acceptanceCriteria, setAcceptanceCriteria] = useState(null);
-
-  const fetchRequirements = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getRequirements();
-      setRequirements(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRequirements();
-  }, []);
-
-  const handleSelect = (id) => {
-    setTimeout(() => {
-      setSelectedRequirementId(id);
-    }, 100);
-    setAcceptanceCriteria(null);
-  };
-
-  const handleCreate = async () => {
-    setSaving(true);
-    try {
-      const newReq = await createRequirement({
-        title: "New Requirement",
-        description: "",
-        status: "Draft",
-      });
-      setRequirements((prev) => [...prev, newReq]);
-      setSelectedRequirementId(newReq.id);
-    } catch (err) {
-      console.error("Failed to create requirement:", err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleUpdate = async (id, data) => {
-    setSaving(true);
-    try {
-      const updated = await updateRequirement(id, data);
-      setRequirements((prev) =>
-        prev.map((req) => (req.id === id ? updated : req))
-      );
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    setSaving(true);
-    try {
-      await deleteRequirement(id);
-      setRequirements((prev) => prev.filter((req) => req.id !== id));
-      if (selectedRequirementId === id) {
-        setSelectedRequirementId(null);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleGenerateAI = async (id) => {
-    setGenerating(true);
-    try {
-      const criteria = await generateAcceptanceCriteria(id);
-      setAcceptanceCriteria(criteria);
-      setGenerating(false);
-    } catch (err) {
-      setError(err.message);
-      setGenerating(false);
-    }
-  };
-
-  const handleClose = () => {
-    setSelectedRequirementId(null);
-    setAcceptanceCriteria(null);
-  };
-
-  const selectedRequirement = requirements.find(
-    (req) => req.id === selectedRequirementId
-  );
+  const {
+    requirements,
+    selectedRequirementId,
+    selectedRequirement,
+    loading,
+    error,
+    saving,
+    generating,
+    acceptanceCriteria,
+    fetchRequirements,
+    select,
+    create,
+    update,
+    remove,
+    generateAI,
+    close,
+  } = useRequirements();
 
   return (
     <div
@@ -121,8 +33,8 @@ function App() {
         <RequirementList
           requirements={requirements}
           selectedId={selectedRequirementId}
-          onSelect={handleSelect}
-          onCreate={handleCreate}
+          onSelect={select}
+          onCreate={create}
           loading={loading}
           error={error}
           onRetry={fetchRequirements}
@@ -130,10 +42,10 @@ function App() {
       </div>
       <RequirementDetail
         requirement={selectedRequirement}
-        onUpdate={handleUpdate}
-        onDelete={handleDelete}
-        onGenerateAI={handleGenerateAI}
-        onClose={handleClose}
+        onUpdate={update}
+        onDelete={remove}
+        onGenerateAI={generateAI}
+        onClose={close}
         saving={saving}
         generating={generating}
         acceptanceCriteria={acceptanceCriteria}

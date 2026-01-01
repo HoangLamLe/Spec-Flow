@@ -38,6 +38,15 @@ function RequirementDetail({
 
   // Auto-save with debouncing - saves 3 seconds after last change
   useEffect(() => {
+    if (requirement) {
+      setTitle(requirement.title);
+      setDescription(requirement.description);
+      setStatus(requirement.status || "Draft");
+    }
+  }, [requirement]);
+
+  // Auto-save with debouncing - saves 3 seconds after last change
+  useEffect(() => {
     if (!requirement) return;
 
     // Check if there are actual changes from the loaded requirement
@@ -74,14 +83,6 @@ function RequirementDetail({
   }, [requirement, title, description, status, onUpdate]);
 
   useEffect(() => {
-    if (requirement) {
-      setTitle(requirement.title);
-      setDescription(requirement.description);
-      setStatus(requirement.status || "Draft");
-    }
-  }, [requirement]);
-
-  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && requirement) {
         onClose();
@@ -95,7 +96,10 @@ function RequirementDetail({
     };
 
     window.addEventListener("keydown", handleKeyDown);
-  });
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [requirement, title, description, status, onClose, onUpdate]);
 
   const handleSave = () => {
     onUpdate(requirement.id, { title: title.trim(), description, status });

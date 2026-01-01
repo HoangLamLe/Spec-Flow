@@ -125,16 +125,11 @@ export const getRequirementById = (id) => {
 
 export const createRequirement = (data) => {
   return simulateRequest(() => {
-    let status = data.status || "Draft";
-    if (Math.random() < 0.3) {
-      status = status.toLowerCase().replace(/ /g, "_");
-    }
-
     const newRequirement = {
       id: String(nextId++),
       title: data.title || "Untitled Requirement",
       description: data.description || "",
-      status: status,
+      status: data.status || "Draft",
     };
     requirements.push(newRequirement);
     saveNextId(nextId);
@@ -149,16 +144,12 @@ export const updateRequirement = (id, data) => {
     if (index === -1) {
       throw new Error(`Requirement with id ${id} not found`);
     }
-
-    let updatedStatus = data.status;
-    if (data.status && Math.random() < 0.2) {
-      updatedStatus = data.status.toLowerCase().replace(/ /g, "_");
-    }
-
+    // Preserve status casing and only update if provided in `data`.
     requirements[index] = {
       ...requirements[index],
       ...data,
-      status: updatedStatus,
+      status:
+        data.status !== undefined ? data.status : requirements[index].status,
     };
     saveRequirements(requirements);
     return { ...requirements[index] };
