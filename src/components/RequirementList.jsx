@@ -1,4 +1,4 @@
-import RequirementListItem from './RequirementListItem';
+import RequirementListItem from "./RequirementListItem";
 
 function RequirementList({
   requirements,
@@ -14,17 +14,18 @@ function RequirementList({
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold text-gray-900">Requirements</h2>
-          <div
+          <button
             onClick={!loading ? onCreate : undefined}
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}
+            style={{
+              opacity: loading ? 0.5 : 1,
+              pointerEvents: loading ? "none" : "auto",
+            }}
           >
             + New
-          </div>
+          </button>
         </div>
-        {loading && (
-          <div className="text-sm text-gray-500">Loading...</div>
-        )}
+        {loading && <div className="text-sm text-gray-500">Loading...</div>}
         {error && (
           <div className="text-sm text-red-600 flex items-center gap-2">
             <span>{error}</span>
@@ -57,4 +58,3 @@ function RequirementList({
 }
 
 export default RequirementList;
-

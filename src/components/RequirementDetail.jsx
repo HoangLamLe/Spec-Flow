@@ -21,7 +21,6 @@ function RequirementDetail({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("Draft");
-  const [lastSaved, setLastSaved] = useState(null);
   const [versions, setVersions] = useState([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
 
@@ -63,7 +62,6 @@ function RequirementDetail({
           description,
           status,
         });
-        setLastSaved(new Date().toISOString());
       } catch (err) {
         console.error("Auto-save failed:", err);
       }
@@ -101,7 +99,6 @@ function RequirementDetail({
 
   const handleSave = () => {
     onUpdate(requirement.id, { title: title.trim(), description, status });
-    setLastSaved(new Date().toISOString());
   };
 
   const handleCommitVersion = async () => {
